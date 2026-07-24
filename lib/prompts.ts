@@ -104,6 +104,16 @@ export const hasBingo = (
   if (condition === "blackout") return picked.length === 16;
   return WINNING_LINES.some(marked);
 };
+export const completedPatterns = (
+  picked: number[],
+  condition: WinCondition = "line",
+) => {
+  if (condition !== "line")
+    return hasBingo(picked, condition) ? [condition] : [];
+  return WINNING_LINES.map((line, index) => ({ line, key: `line-${index}` }))
+    .filter(({ line }) => line.every((index) => picked.includes(index)))
+    .map(({ key }) => key);
+};
 export const oneAway = (picked: number[], condition: WinCondition = "line") => {
   if (hasBingo(picked, condition)) return false;
   const needed =

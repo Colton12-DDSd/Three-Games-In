@@ -8,7 +8,7 @@ import {
   shuffle,
   transferHost,
 } from "@/lib/rooms";
-import { isCardSet, isWinCondition } from "@/lib/prompts";
+import { completedPatterns, isCardSet, isWinCondition } from "@/lib/prompts";
 
 export async function POST(
   request: NextRequest,
@@ -86,7 +86,10 @@ export async function POST(
       return NextResponse.json({ ok: true });
     }
     if (action === "mark") {
-      if (room.status !== "active")
+      if (
+        room.status !== "active" &&
+        !(room.status === "bingo" && room.winner_player_id === me.id)
+      )
         return NextResponse.json(
           { error: "The round is not active." },
           { status: 400 },
@@ -100,11 +103,6 @@ export async function POST(
         .eq("player_id", me.id)
         .eq("round_number", room.round_number)
         .single();
-      if (card.locked)
-        return NextResponse.json(
-          { error: "Your bingo card is locked." },
-          { status: 400 },
-        );
       const selected = Array.isArray(card.selected_squares)
         ? (card.selected_squares as number[])
         : [];
@@ -112,10 +110,23 @@ export async function POST(
       const next = wasSelected
         ? selected.filter((x) => x !== index)
         : [...selected, index];
-      const bingo = hasBingo(next, room.win_condition);
+      const patterns = completedPatterns(next, room.win_condition);
+      const previousPatterns = Array.isArray(card.bingo_patterns)
+        ? (card.bingo_patterns as string[])
+        : [];
+      const newPatterns = patterns.filter(
+        (pattern) => !previousPatterns.includes(pattern),
+      );
+      const allPatterns = [...new Set([...previousPatterns, ...patterns])];
+      const newPatternCount = newPatterns.length;
+      const bingo = patterns.length > 0;
       await db
         .from("player_cards")
-        .update({ selected_squares: next, locked: bingo })
+        .update({
+          selected_squares: next,
+          locked: false,
+          bingo_patterns: allPatterns,
+        })
         .eq("player_id", me.id)
         .eq("round_number", room.round_number);
       await db
@@ -132,7 +143,7 @@ export async function POST(
         last_marked_at: now,
         last_activity_at: now,
       };
-      if (bingo && !room.winner_player_id) {
+      if (newPatternCount > 0 && !room.winner_player_id) {
         const eventId = randomUUID();
         const { data: claimed } = await db
           .from("rooms")
@@ -141,6 +152,8 @@ export async function POST(
             status: "bingo",
             winner_player_id: me.id,
             bingo_event_id: eventId,
+            celebration_label: "BINGO!",
+            winner_pattern_count: patterns.length,
           })
           .eq("id", room.id)
           .is("winner_player_id", null)
@@ -176,6 +189,20 @@ export async function POST(
                 .eq("id", contender.id);
           }
         }
+      } else if (newPatternCount > 0 && room.winner_player_id === me.id) {
+        const label =
+          patterns.length === 2
+            ? "DOUBLE BINGO!"
+            : `${patterns.length}× BINGO!`;
+        await db
+          .from("rooms")
+          .update({
+            ...roomUpdate,
+            bingo_event_id: randomUUID(),
+            celebration_label: label,
+            winner_pattern_count: patterns.length,
+          })
+          .eq("id", room.id);
       } else await db.from("rooms").update(roomUpdate).eq("id", room.id);
       return NextResponse.json({ ok: true, bingo });
     }

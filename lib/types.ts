@@ -9,6 +9,8 @@ export type Room = {
   status: RoomStatus;
   winner_player_id: string | null;
   bingo_event_id: string | null;
+  celebration_label: string | null;
+  winner_pattern_count: number;
   last_marker_player_id: string | null;
   last_marked_at: string | null;
   last_activity_at: string;
@@ -29,6 +31,7 @@ export type Card = {
   card_order: number[];
   selected_squares: number[];
   locked: boolean;
+  bingo_patterns: string[];
 };
 export type RoomPayload = {
   room: Room;

@@ -54,7 +54,7 @@ export async function GET(
         .order("joined_at"),
       db
         .from("player_cards")
-        .select("card_order,selected_squares,locked")
+        .select("card_order,selected_squares,locked,bingo_patterns")
         .eq("player_id", id)
         .eq("round_number", freshRoom.round_number)
         .maybeSingle(),
