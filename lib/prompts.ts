@@ -79,8 +79,31 @@ export const WINNING_LINES = [
   [0, 5, 10, 15],
   [3, 6, 9, 12],
 ];
-export const hasBingo = (picked: number[]) =>
-  WINNING_LINES.some((line) => line.every((index) => picked.includes(index)));
+export const WIN_CONDITIONS = {
+  line: { label: "Any line", description: "Any row, column, or diagonal" },
+  corners: { label: "Four corners", description: "All four corner squares" },
+  x: { label: "X", description: "Both diagonals" },
+  corners_center: {
+    label: "Corners + center",
+    description: "Four corners and the center",
+  },
+  blackout: { label: "Blackout", description: "Mark every square" },
+} as const;
+export type WinCondition = keyof typeof WIN_CONDITIONS;
+export const isWinCondition = (value: unknown): value is WinCondition =>
+  typeof value === "string" && value in WIN_CONDITIONS;
+export const hasBingo = (
+  picked: number[],
+  condition: WinCondition = "line",
+) => {
+  const marked = (line: number[]) =>
+    line.every((index) => picked.includes(index));
+  if (condition === "corners") return marked([0, 3, 12, 15]);
+  if (condition === "x") return marked([0, 5, 10, 15]) && marked([3, 6, 9, 12]);
+  if (condition === "corners_center") return marked([0, 3, 5, 12, 15]);
+  if (condition === "blackout") return picked.length === 16;
+  return WINNING_LINES.some(marked);
+};
 export const oneAway = (picked: number[]) =>
   !hasBingo(picked) &&
   WINNING_LINES.some(

@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/supabase/server";
 import { cleanName, makeCode, randomUUID, shuffle } from "@/lib/rooms";
-import { isCardSet } from "@/lib/prompts";
+import { isCardSet, isWinCondition } from "@/lib/prompts";
 
 export async function POST(request: NextRequest) {
   try {
-    const { intent, name, roomCode, playerId, playerSecret, cardSet } =
-      await request.json();
+    const {
+      intent,
+      name,
+      roomCode,
+      playerId,
+      playerSecret,
+      cardSet,
+      winCondition,
+    } = await request.json();
     const displayName = cleanName(name);
     if (!displayName)
       return NextResponse.json(
@@ -33,6 +40,7 @@ export async function POST(request: NextRequest) {
           room_code: code,
           host_player_id: null,
           card_set: isCardSet(cardSet) ? cardSet : "arenas",
+          win_condition: isWinCondition(winCondition) ? winCondition : "line",
         })
         .select()
         .single();
@@ -101,24 +109,20 @@ export async function POST(request: NextRequest) {
       );
     const id = randomUUID(),
       secret = randomUUID();
-    const { error } = await db
-      .from("players")
-      .insert({
-        id,
-        room_id: room.id,
-        display_name: displayName,
-        access_secret: secret,
-      });
+    const { error } = await db.from("players").insert({
+      id,
+      room_id: room.id,
+      display_name: displayName,
+      access_secret: secret,
+    });
     if (error) throw error;
     if (room.round_number > 0)
-      await db
-        .from("player_cards")
-        .insert({
-          player_id: id,
-          round_number: room.round_number,
-          card_order: shuffle(),
-          selected_squares: [],
-        });
+      await db.from("player_cards").insert({
+        player_id: id,
+        round_number: room.round_number,
+        card_order: shuffle(),
+        selected_squares: [],
+      });
     await db
       .from("rooms")
       .update({ last_activity_at: new Date().toISOString() })

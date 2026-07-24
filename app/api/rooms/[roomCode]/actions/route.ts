@@ -7,7 +7,7 @@ import {
   shuffle,
   transferHost,
 } from "@/lib/rooms";
-import { isCardSet } from "@/lib/prompts";
+import { isCardSet, isWinCondition } from "@/lib/prompts";
 
 export async function POST(
   request: NextRequest,
@@ -87,7 +87,7 @@ export async function POST(
       const next = selected.includes(index)
         ? selected.filter((x) => x !== index)
         : [...selected, index];
-      const bingo = hasBingo(next);
+      const bingo = hasBingo(next, room.win_condition);
       await db
         .from("player_cards")
         .update({ selected_squares: next, locked: bingo })
@@ -101,19 +101,24 @@ export async function POST(
           last_seen_at: now,
         })
         .eq("id", me.id);
+      const roomUpdate = {
+        last_marker_player_id: me.id,
+        last_marked_at: now,
+        last_activity_at: now,
+      };
       if (bingo && !room.winner_player_id) {
         const eventId = randomUUID();
         await db
           .from("rooms")
           .update({
+            ...roomUpdate,
             status: "bingo",
             winner_player_id: me.id,
             bingo_event_id: eventId,
-            last_activity_at: now,
           })
           .eq("id", room.id)
           .is("winner_player_id", null);
-      }
+      } else await db.from("rooms").update(roomUpdate).eq("id", room.id);
       return NextResponse.json({ ok: true, bingo });
     }
     if (room.host_player_id !== me.id)
@@ -123,20 +128,21 @@ export async function POST(
       );
     if (action === "start" || action === "new_round") {
       const nextRound = room.round_number + 1,
-        cardSet = isCardSet(body.cardSet) ? body.cardSet : room.card_set;
+        cardSet = isCardSet(body.cardSet) ? body.cardSet : room.card_set,
+        winCondition = isWinCondition(body.winCondition)
+          ? body.winCondition
+          : room.win_condition;
       const { data: all } = await db
         .from("players")
         .select("id")
         .eq("room_id", room.id);
       for (const p of all ?? [])
-        await db
-          .from("player_cards")
-          .insert({
-            player_id: p.id,
-            round_number: nextRound,
-            card_order: shuffle(),
-            selected_squares: [],
-          });
+        await db.from("player_cards").insert({
+          player_id: p.id,
+          round_number: nextRound,
+          card_order: shuffle(),
+          selected_squares: [],
+        });
       await db
         .from("players")
         .update({ progress_count: 0, has_bingo: false })
@@ -145,6 +151,7 @@ export async function POST(
         .from("rooms")
         .update({
           card_set: cardSet,
+          win_condition: winCondition,
           round_number: nextRound,
           status: "active",
           winner_player_id: null,

@@ -1,7 +1,12 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CARD_SETS, CardSetKey } from "@/lib/prompts";
+import {
+  CARD_SETS,
+  CardSetKey,
+  WIN_CONDITIONS,
+  WinCondition,
+} from "@/lib/prompts";
 type Saved = {
   playerId: string;
   playerSecret: string;
@@ -13,6 +18,7 @@ export function Home() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [cardSet, setCardSet] = useState<CardSetKey>("arenas");
+  const [winCondition, setWinCondition] = useState<WinCondition>("line");
   const [busy, setBusy] = useState<"create" | "join" | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -39,6 +45,7 @@ export function Home() {
           name,
           roomCode: code,
           cardSet,
+          winCondition,
           playerId: old?.playerId,
           playerSecret: old?.playerSecret,
         }),
@@ -113,6 +120,22 @@ export function Home() {
                 ))}
               </div>
             </fieldset>
+            <label className="block text-sm font-bold">
+              Win condition
+              <select
+                value={winCondition}
+                onChange={(e) =>
+                  setWinCondition(e.target.value as WinCondition)
+                }
+                className="mt-2 w-full rounded-xl border border-white/10 bg-ink px-4 py-3"
+              >
+                {Object.entries(WIN_CONDITIONS).map(([key, condition]) => (
+                  <option key={key} value={key}>
+                    {condition.label} — {condition.description}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button disabled={!!busy} className="btn btn-primary w-full">
               {busy === "create" ? "Creating room…" : "Create a room"}
             </button>

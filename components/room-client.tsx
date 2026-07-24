@@ -6,7 +6,8 @@ import { BingoCard } from "@/components/bingo-card";
 import { PlayerList } from "@/components/player-list";
 import { BingoCelebration } from "@/components/bingo-celebration";
 import { RoomPayload } from "@/lib/types";
-import { CARD_SETS } from "@/lib/prompts";
+import { CARD_SETS, WIN_CONDITIONS, WinCondition } from "@/lib/prompts";
+import { playOwnMark, playRemoteMark } from "@/lib/sounds";
 type Saved = {
   playerId: string;
   playerSecret: string;
@@ -28,6 +29,7 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
     [celebration, setCelebration] = useState<string | null>(null),
     [copied, setCopied] = useState(false),
     [nextCardSet, setNextCardSet] = useState<keyof typeof CARD_SETS>("arenas"),
+    [nextWinCondition, setNextWinCondition] = useState<WinCondition>("line"),
     saved = useRef<Saved | null>(null),
     heardEvent = useRef<string | null>(null),
     channel = useRef<ReturnType<
@@ -76,7 +78,14 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
       const client = createClient(url, key);
       const c = client
         .channel(`room:${roomCode}`, { config: { broadcast: { self: false } } })
-        .on("broadcast", { event: "changed" }, () => reload(true))
+        .on("broadcast", { event: "changed" }, ({ payload }) => {
+          if (
+            payload?.action === "mark" &&
+            payload.playerId !== saved.current?.playerId
+          )
+            playRemoteMark();
+          reload(true);
+        })
         .subscribe();
       channel.current = c;
     }
@@ -99,8 +108,11 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
     }
   }, [data]);
   useEffect(() => {
-    if (data) setNextCardSet(data.room.card_set);
-  }, [data?.room.card_set]);
+    if (data) {
+      setNextCardSet(data.room.card_set);
+      setNextWinCondition(data.room.win_condition);
+    }
+  }, [data?.room.card_set, data?.room.win_condition]);
   async function act(
     action: string,
     extra: Record<string, unknown> = {},
@@ -122,10 +134,11 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
       });
       const json = await r.json();
       if (!r.ok) throw new Error(json.error);
+      if (action === "mark") playOwnMark();
       channel.current?.send({
         type: "broadcast",
         event: "changed",
-        payload: { action },
+        payload: { action, playerId: s.playerId },
       });
       await reload(true);
     } catch (e) {
@@ -137,6 +150,13 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
   const host = data?.room.host_player_id === data?.me.id;
   const winner = useMemo(
     () => data?.players.find((p) => p.id === data.room.winner_player_id),
+    [data],
+  );
+  const lastMarker = useMemo(
+    () =>
+      data?.players.find(
+        (player) => player.id === data.room.last_marker_player_id,
+      ),
     [data],
   );
   if (loading && !data)
@@ -201,6 +221,17 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
             <p className="mt-2 text-sm text-slate-400">
               Round {data.room.round_number || "—"}
             </p>
+            <p className="mt-2 text-sm font-bold text-violet">
+              {WIN_CONDITIONS[data.room.win_condition].label}
+            </p>
+            {lastMarker && data.room.status === "active" && (
+              <p
+                className="mt-3 rounded-lg bg-violet/10 px-2 py-2 text-xs font-bold text-violet"
+                aria-live="polite"
+              >
+                Latest mark: {lastMarker.display_name}
+              </p>
+            )}
             {winner && (
               <p className="mt-3 text-sm font-bold text-mint">
                 Winner: {winner.display_name}
@@ -265,7 +296,9 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
                   <select
                     value={nextCardSet}
                     onChange={(event) =>
-                      setNextCardSet(event.target.value as keyof typeof CARD_SETS)
+                      setNextCardSet(
+                        event.target.value as keyof typeof CARD_SETS,
+                      )
                     }
                     className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-sm"
                   >
@@ -276,10 +309,31 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
                     ))}
                   </select>
                 </label>
+                <label className="text-xs font-bold text-slate-300">
+                  Win condition
+                  <select
+                    value={nextWinCondition}
+                    onChange={(event) =>
+                      setNextWinCondition(event.target.value as WinCondition)
+                    }
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-ink px-3 py-2 text-sm"
+                  >
+                    {Object.entries(WIN_CONDITIONS).map(([key, condition]) => (
+                      <option key={key} value={key}>
+                        {condition.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 {data.room.status === "waiting" ? (
                   <button
                     disabled={busy}
-                    onClick={() => act("start", { cardSet: nextCardSet })}
+                    onClick={() =>
+                      act("start", {
+                        cardSet: nextCardSet,
+                        winCondition: nextWinCondition,
+                      })
+                    }
                     className="btn btn-primary"
                   >
                     Start first round
@@ -289,7 +343,10 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
                     <button
                       disabled={busy}
                       onClick={() =>
-                        act("new_round", { cardSet: nextCardSet })
+                        act("new_round", {
+                          cardSet: nextCardSet,
+                          winCondition: nextWinCondition,
+                        })
                       }
                       className="btn btn-primary"
                     >
