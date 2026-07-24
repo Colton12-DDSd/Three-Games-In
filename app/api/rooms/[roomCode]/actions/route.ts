@@ -150,7 +150,7 @@ export async function POST(
           .from("rooms")
           .update({
             ...roomUpdate,
-            status: "bingo",
+            status: "active",
             winner_player_id: me.id,
             bingo_event_id: eventId,
             celebration_label: "BINGO!",
