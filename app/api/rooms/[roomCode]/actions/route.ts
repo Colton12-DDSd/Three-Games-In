@@ -76,7 +76,7 @@ export async function POST(
         .eq("room_id", room.id);
       if (!count) {
         await db.from("rooms").delete().eq("id", room.id);
-      } else if (room.host_player_id === me.id) {
+      } else if (room.host_player_id === me.id && remaining?.[0]) {
         await db
           .from("rooms")
           .update({ host_player_id: remaining[0].id, last_activity_at: now })
