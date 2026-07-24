@@ -61,6 +61,29 @@ export async function POST(
         );
       return NextResponse.json({ ok: true });
     }
+    if (action === "leave") {
+      const { data: remaining } = await db
+        .from("players")
+        .select("id,is_active,joined_at")
+        .eq("room_id", room.id)
+        .neq("id", me.id)
+        .order("is_active", { ascending: false })
+        .order("joined_at");
+      await db.from("players").delete().eq("id", me.id);
+      const { count } = await db
+        .from("players")
+        .select("id", { count: "exact", head: true })
+        .eq("room_id", room.id);
+      if (!count) {
+        await db.from("rooms").delete().eq("id", room.id);
+      } else if (room.host_player_id === me.id) {
+        await db
+          .from("rooms")
+          .update({ host_player_id: remaining[0].id, last_activity_at: now })
+          .eq("id", room.id);
+      }
+      return NextResponse.json({ ok: true });
+    }
     if (action === "mark") {
       if (room.status !== "active")
         return NextResponse.json(

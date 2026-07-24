@@ -147,6 +147,38 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
       if (!quiet) setBusy(false);
     }
   }
+  async function leaveRoom() {
+    if (!confirm("Leave this room? Your card and progress will be removed."))
+      return;
+    const s = saved.current;
+    if (!s) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/rooms/${roomCode}/actions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "leave",
+          playerId: s.playerId,
+          playerSecret: s.playerSecret,
+        }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error);
+      channel.current?.send({
+        type: "broadcast",
+        event: "changed",
+        payload: { action: "leave", playerId: s.playerId },
+      });
+      localStorage.removeItem("three-games-in");
+      location.assign("/");
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not leave the room.",
+      );
+      setBusy(false);
+    }
+  }
   const host = data?.room.host_player_id === data?.me.id;
   const winner = useMemo(
     () => data?.players.find((p) => p.id === data.room.winner_player_id),
@@ -287,6 +319,13 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
               they happen—four in any row, column, or diagonal wins.
             </p>
           </section>
+          <button
+            disabled={busy}
+            onClick={leaveRoom}
+            className="btn btn-secondary w-full text-sm"
+          >
+            Leave room
+          </button>
           {host && (
             <section className="panel rounded-2xl p-5">
               <h2 className="font-black">Host controls</h2>
