@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound() { return <main className="grid min-h-screen place-items-center p-6"><section className="panel max-w-md rounded-3xl p-8 text-center"><p className="text-mint">ROOM NOT FOUND</p><h1 className="mt-2 text-3xl font-black">This game has moved on.</h1><p className="mt-3 text-slate-300">The room code is invalid or the room expired after 24 hours of inactivity.</p><Link className="btn btn-primary mt-6 inline-block" href="/">Make or join a room</Link></section></main>; }
