@@ -132,7 +132,8 @@ export async function POST(request: NextRequest) {
       playerId: id,
       playerSecret: secret,
     });
-  } catch {
+  } catch (error) {
+    console.error("Room creation/join failed", error);
     return NextResponse.json(
       { error: "Unable to reach the game database. Please try again." },
       { status: 500 },

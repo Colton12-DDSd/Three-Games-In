@@ -193,7 +193,8 @@ export async function POST(
       return NextResponse.json({ ok: true });
     }
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });
-  } catch {
+  } catch (error) {
+    console.error("Room action failed", error);
     return NextResponse.json(
       { error: "That change could not be saved." },
       { status: 500 },
