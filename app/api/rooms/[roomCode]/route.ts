@@ -48,7 +48,7 @@ export async function GET(
       db
         .from("players")
         .select(
-          "id,display_name,progress_count,has_bingo,is_one_away,bingo_count,total_marks,near_miss_count,is_active,joined_at,last_seen_at",
+          "id,display_name,progress_count,has_bingo,is_one_away,bingo_count,total_marks,is_active,joined_at,last_seen_at",
         )
         .eq("room_id", room.id)
         .order("joined_at"),
@@ -70,7 +70,6 @@ export async function GET(
         is_one_away: me.is_one_away,
         bingo_count: me.bingo_count,
         total_marks: me.total_marks,
-        near_miss_count: me.near_miss_count,
         is_active: me.is_active,
         joined_at: me.joined_at,
         last_seen_at: me.last_seen_at,

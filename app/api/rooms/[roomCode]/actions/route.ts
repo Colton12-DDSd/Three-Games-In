@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/supabase/server";
 import {
   hasBingo,
-  oneAway,
   cleanName,
   randomUUID,
   shuffle,
@@ -165,30 +164,6 @@ export async function POST(
             .from("players")
             .update({ bingo_count: me.bingo_count + 1 })
             .eq("id", me.id);
-          const [{ data: cards }, { data: contenders }] = await Promise.all([
-            db
-              .from("player_cards")
-              .select("player_id,selected_squares")
-              .eq("round_number", room.round_number),
-            db
-              .from("players")
-              .select("id,near_miss_count")
-              .eq("room_id", room.id)
-              .neq("id", me.id),
-          ]);
-          for (const contender of contenders ?? []) {
-            const contenderCard = cards?.find(
-              (entry) => entry.player_id === contender.id,
-            );
-            const picked = Array.isArray(contenderCard?.selected_squares)
-              ? (contenderCard.selected_squares as number[])
-              : [];
-            if (oneAway(picked, room.win_condition))
-              await db
-                .from("players")
-                .update({ near_miss_count: contender.near_miss_count + 1 })
-                .eq("id", contender.id);
-          }
         }
       } else if (newPatternCount > 0 && room.winner_player_id === me.id) {
         const label =

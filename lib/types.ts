@@ -23,7 +23,6 @@ export type Player = {
   is_one_away: boolean;
   bingo_count: number;
   total_marks: number;
-  near_miss_count: number;
   is_active: boolean;
   joined_at: string;
   last_seen_at: string;
