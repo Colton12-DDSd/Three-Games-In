@@ -301,9 +301,7 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
                 cardSet={data.room.card_set}
                 order={data.card.card_order}
                 selected={data.card.selected_squares}
-                disabled={
-                  busy || data.room.status !== "active" || data.card.locked
-                }
+                disabled={busy || (data.room.status !== "active" && !(data.room.status === "bingo" && data.room.winner_player_id === data.me.id))}
                 onMark={(i) => act("mark", { index: i })}
               />
             ) : (
