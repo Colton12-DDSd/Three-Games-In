@@ -6,7 +6,8 @@ import { BingoCard } from "@/components/bingo-card";
 import { PlayerList } from "@/components/player-list";
 import { BingoCelebration } from "@/components/bingo-celebration";
 import { RoomStats } from "@/components/room-stats";
-import { RoomPayload } from "@/lib/types";
+import { CardInspector } from "@/components/card-inspector";
+import { Player, RoomPayload } from "@/lib/types";
 import { CARD_SETS, WIN_CONDITIONS, WinCondition } from "@/lib/prompts";
 import { playOwnMark, playRemoteMark } from "@/lib/sounds";
 type Saved = {
@@ -31,6 +32,7 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
     [copied, setCopied] = useState(false),
     [nextCardSet, setNextCardSet] = useState<keyof typeof CARD_SETS>("arenas"),
     [nextWinCondition, setNextWinCondition] = useState<WinCondition>("line"),
+    [inspecting, setInspecting] = useState<Player | null>(null),
     saved = useRef<Saved | null>(null),
     heardEvent = useRef<string | null>(null),
     channel = useRef<ReturnType<
@@ -276,6 +278,8 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
             hostId={data.room.host_player_id}
             canRemove={host}
             remove={(id) => act("remove", { targetId: id })}
+            inspect={setInspecting}
+            lastMarkerId={data.room.last_marker_player_id}
           />
           <RoomStats players={data.players} />
         </aside>
@@ -301,7 +305,14 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
                 cardSet={data.room.card_set}
                 order={data.card.card_order}
                 selected={data.card.selected_squares}
-                disabled={busy || (data.room.status !== "active" && !(data.room.status === "bingo" && data.room.winner_player_id === data.me.id))}
+                disabled={
+                  busy ||
+                  (data.room.status !== "active" &&
+                    !(
+                      data.room.status === "bingo" &&
+                      data.room.winner_player_id === data.me.id
+                    ))
+                }
                 onMark={(i) => act("mark", { index: i })}
               />
             ) : (
@@ -415,7 +426,16 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
       {celebration && (
         <BingoCelebration
           winner={celebration}
+          label={data.room.celebration_label ?? "BINGO!"}
           dismiss={() => setCelebration(null)}
+        />
+      )}
+      {inspecting && (
+        <CardInspector
+          player={inspecting}
+          card={data.cards.find((card) => card.player_id === inspecting.id)}
+          cardSet={data.room.card_set}
+          close={() => setInspecting(null)}
         />
       )}
     </main>

@@ -33,9 +33,15 @@ export type Card = {
   locked: boolean;
   bingo_patterns: string[];
 };
+export type SharedCard = {
+  player_id: string;
+  card_order: number[];
+  selected_squares: number[];
+};
 export type RoomPayload = {
   room: Room;
   players: Player[];
   me: Player;
   card: Card;
+  cards: SharedCard[];
 };

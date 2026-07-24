@@ -33,9 +33,11 @@ function playFanfare() {
 }
 export function BingoCelebration({
   winner,
+  label,
   dismiss,
 }: {
   winner: string;
+  label: string;
   dismiss: () => void;
 }) {
   useEffect(() => {
@@ -55,7 +57,7 @@ export function BingoCelebration({
         <p className="mt-6 text-sm font-black tracking-[.25em] text-mint">
           WE HAVE A WINNER
         </p>
-        <h2 className="mt-2 text-5xl font-black">BINGO!</h2>
+        <h2 className="mt-2 text-5xl font-black">{label}</h2>
         <p className="mt-3 text-xl text-slate-200">{winner} got there first.</p>
         <button autoFocus className="btn btn-primary mt-8" onClick={dismiss}>
           Keep playing

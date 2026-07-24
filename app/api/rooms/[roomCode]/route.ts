@@ -59,6 +59,14 @@ export async function GET(
         .eq("round_number", freshRoom.round_number)
         .maybeSingle(),
     ]);
+    const { data: cards } = await db
+      .from("player_cards")
+      .select("player_id,card_order,selected_squares")
+      .in(
+        "player_id",
+        (players ?? []).map((player) => player.id),
+      )
+      .eq("round_number", freshRoom.round_number);
     return NextResponse.json({
       room: freshRoom,
       players: players ?? [],
@@ -75,6 +83,7 @@ export async function GET(
         last_seen_at: me.last_seen_at,
       },
       card,
+      cards: cards ?? [],
     });
   } catch (error) {
     console.error("Room load failed", error);

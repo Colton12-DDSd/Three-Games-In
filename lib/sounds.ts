@@ -23,4 +23,4 @@ function tone(notes: number[], type: OscillatorType, volume: number) {
   } catch {}
 }
 export const playOwnMark = () => tone([587.33], "sine", 0.06);
-export const playRemoteMark = () => tone([440, 659.25], "triangle", 0.045);
+export const playRemoteMark = () => tone([196, 783.99, 196], "square", 0.1);

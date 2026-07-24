@@ -166,11 +166,16 @@ export async function POST(
             .update({ bingo_count: me.bingo_count + 1 })
             .eq("id", me.id);
         }
-      } else if (newPatternCount > 0 && room.winner_player_id === me.id) {
+      } else if (newPatternCount > 0) {
         const label =
           patterns.length === 2
             ? "DOUBLE BINGO!"
             : `${patterns.length}× BINGO!`;
+        if (previousPatterns.length === 0)
+          await db
+            .from("players")
+            .update({ bingo_count: me.bingo_count + 1 })
+            .eq("id", me.id);
         await db
           .from("rooms")
           .update({
