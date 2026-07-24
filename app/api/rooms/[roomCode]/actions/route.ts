@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/supabase/server";
 import {
   hasBingo,
+  oneAway,
   cleanName,
   randomUUID,
   shuffle,
@@ -107,7 +108,8 @@ export async function POST(
       const selected = Array.isArray(card.selected_squares)
         ? (card.selected_squares as number[])
         : [];
-      const next = selected.includes(index)
+      const wasSelected = selected.includes(index);
+      const next = wasSelected
         ? selected.filter((x) => x !== index)
         : [...selected, index];
       const bingo = hasBingo(next, room.win_condition);
@@ -121,6 +123,7 @@ export async function POST(
         .update({
           progress_count: next.length,
           has_bingo: bingo,
+          total_marks: me.total_marks + (wasSelected ? 0 : 1),
           last_seen_at: now,
         })
         .eq("id", me.id);
@@ -131,7 +134,7 @@ export async function POST(
       };
       if (bingo && !room.winner_player_id) {
         const eventId = randomUUID();
-        await db
+        const { data: claimed } = await db
           .from("rooms")
           .update({
             ...roomUpdate,
@@ -140,7 +143,39 @@ export async function POST(
             bingo_event_id: eventId,
           })
           .eq("id", room.id)
-          .is("winner_player_id", null);
+          .is("winner_player_id", null)
+          .select("id")
+          .maybeSingle();
+        if (claimed) {
+          await db
+            .from("players")
+            .update({ bingo_count: me.bingo_count + 1 })
+            .eq("id", me.id);
+          const [{ data: cards }, { data: contenders }] = await Promise.all([
+            db
+              .from("player_cards")
+              .select("player_id,selected_squares")
+              .eq("round_number", room.round_number),
+            db
+              .from("players")
+              .select("id,near_miss_count")
+              .eq("room_id", room.id)
+              .neq("id", me.id),
+          ]);
+          for (const contender of contenders ?? []) {
+            const contenderCard = cards?.find(
+              (entry) => entry.player_id === contender.id,
+            );
+            const picked = Array.isArray(contenderCard?.selected_squares)
+              ? (contenderCard.selected_squares as number[])
+              : [];
+            if (oneAway(picked, room.win_condition))
+              await db
+                .from("players")
+                .update({ near_miss_count: contender.near_miss_count + 1 })
+                .eq("id", contender.id);
+          }
+        }
       } else await db.from("rooms").update(roomUpdate).eq("id", room.id);
       return NextResponse.json({ ok: true, bingo });
     }

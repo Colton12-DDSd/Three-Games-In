@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BingoCard } from "@/components/bingo-card";
 import { PlayerList } from "@/components/player-list";
 import { BingoCelebration } from "@/components/bingo-celebration";
+import { RoomStats } from "@/components/room-stats";
 import { RoomPayload } from "@/lib/types";
 import { CARD_SETS, WIN_CONDITIONS, WinCondition } from "@/lib/prompts";
 import { playOwnMark, playRemoteMark } from "@/lib/sounds";
@@ -276,6 +277,7 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
             canRemove={host}
             remove={(id) => act("remove", { targetId: id })}
           />
+          <RoomStats players={data.players} />
         </aside>
         <section className="order-1 xl:order-2">
           <div className="panel rounded-2xl p-4 sm:p-6">

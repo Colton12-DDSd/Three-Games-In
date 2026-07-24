@@ -104,8 +104,21 @@ export const hasBingo = (
   if (condition === "blackout") return picked.length === 16;
   return WINNING_LINES.some(marked);
 };
-export const oneAway = (picked: number[]) =>
-  !hasBingo(picked) &&
-  WINNING_LINES.some(
-    (line) => line.filter((index) => !picked.includes(index)).length === 1,
-  );
+export const oneAway = (picked: number[], condition: WinCondition = "line") => {
+  if (hasBingo(picked, condition)) return false;
+  const needed =
+    condition === "corners"
+      ? [0, 3, 12, 15]
+      : condition === "x"
+        ? [0, 5, 10, 15, 3, 6, 9, 12]
+        : condition === "corners_center"
+          ? [0, 3, 5, 12, 15]
+          : condition === "blackout"
+            ? [...Array(16).keys()]
+            : null;
+  return needed
+    ? needed.filter((index) => !picked.includes(index)).length === 1
+    : WINNING_LINES.some(
+        (line) => line.filter((index) => !picked.includes(index)).length === 1,
+      );
+};

@@ -18,6 +18,9 @@ export type Player = {
   display_name: string;
   progress_count: number;
   has_bingo: boolean;
+  bingo_count: number;
+  total_marks: number;
+  near_miss_count: number;
   is_active: boolean;
   joined_at: string;
   last_seen_at: string;
