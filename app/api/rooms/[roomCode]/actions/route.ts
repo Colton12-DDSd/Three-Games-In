@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/supabase/server";
 import {
   hasBingo,
+  oneAway,
   cleanName,
   randomUUID,
   shuffle,
