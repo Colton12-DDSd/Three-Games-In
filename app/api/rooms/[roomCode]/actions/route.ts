@@ -134,6 +134,7 @@ export async function POST(
         .update({
           progress_count: next.length,
           has_bingo: bingo,
+          is_one_away: oneAway(next, room.win_condition),
           total_marks: me.total_marks + (wasSelected ? 0 : 1),
           last_seen_at: now,
         })
@@ -230,7 +231,7 @@ export async function POST(
         });
       await db
         .from("players")
-        .update({ progress_count: 0, has_bingo: false })
+        .update({ progress_count: 0, has_bingo: false, is_one_away: false })
         .eq("room_id", room.id);
       await db
         .from("rooms")
@@ -256,7 +257,7 @@ export async function POST(
     if (action === "reset") {
       await db
         .from("players")
-        .update({ progress_count: 0, has_bingo: false })
+        .update({ progress_count: 0, has_bingo: false, is_one_away: false })
         .eq("room_id", room.id);
       await db
         .from("rooms")

@@ -1,3 +1,57 @@
 import { Player } from "@/lib/types";
-import { oneAway } from "@/lib/prompts";
-export function PlayerList({ players, hostId, canRemove, remove }: { players: Player[]; hostId: string; canRemove: boolean; remove: (id: string) => void }) { return <section className="panel rounded-2xl p-5"><h2 className="font-black">Players <span className="text-slate-400">({players.length})</span></h2><div className="mt-4 space-y-2">{players.length === 0 && <p className="text-sm text-slate-400">Waiting for someone to join.</p>}{players.map(p => <div key={p.id} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${p.is_active ? "bg-white/5" : "bg-black/10 opacity-60"}`}><span className={`h-2.5 w-2.5 rounded-full ${p.is_active ? "bg-mint" : "bg-slate-500"}`}/><div className="min-w-0 flex-1"><p className="truncate font-bold">{p.display_name} {p.id === hostId && <span className="text-xs text-violet">HOST</span>}</p><p className="text-xs text-slate-400">{p.has_bingo ? "BINGO" : `${p.progress_count}/16${p.progress_count >= 3 && p.progress_count < 16 ? " · closing in" : ""}`}</p></div>{canRemove && p.id !== hostId && <button aria-label={`Remove ${p.display_name}`} onClick={() => remove(p.id)} className="text-xs text-rose-300">Remove</button>}</div>)}</div></section>; }
+export function PlayerList({
+  players,
+  hostId,
+  canRemove,
+  remove,
+}: {
+  players: Player[];
+  hostId: string;
+  canRemove: boolean;
+  remove: (id: string) => void;
+}) {
+  return (
+    <section className="panel rounded-2xl p-5">
+      <h2 className="font-black">
+        Players <span className="text-slate-400">({players.length})</span>
+      </h2>
+      <div className="mt-4 space-y-2">
+        {players.length === 0 && (
+          <p className="text-sm text-slate-400">Waiting for someone to join.</p>
+        )}
+        {players.map((p) => (
+          <div
+            key={p.id}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 ${p.is_active ? "bg-white/5" : "bg-black/10 opacity-60"}`}
+          >
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${p.is_active ? "bg-mint" : "bg-slate-500"}`}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold">
+                {p.display_name}{" "}
+                {p.id === hostId && (
+                  <span className="text-xs text-violet">HOST</span>
+                )}
+              </p>
+              <p className="text-xs text-slate-400">
+                {p.has_bingo
+                  ? "BINGO"
+                  : `${p.progress_count}/16${p.is_one_away ? " · closing in" : ""}`}
+              </p>
+            </div>
+            {canRemove && p.id !== hostId && (
+              <button
+                aria-label={`Remove ${p.display_name}`}
+                onClick={() => remove(p.id)}
+                className="text-xs text-rose-300"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
