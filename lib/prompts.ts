@@ -137,10 +137,14 @@ export type WinCondition = keyof typeof WIN_CONDITIONS;
 export const isWinCondition = (value: unknown): value is WinCondition =>
   typeof value === "string" && value in WIN_CONDITIONS;
 export const winningLines = (size: number) =>
-  [...Array(size).keys()].flatMap((index) => [
-    [...Array(size).keys()].map((column) => index * size + column),
-    [...Array(size).keys()].map((row) => row * size + index),
-  ]);
+  [
+    ...[...Array(size).keys()].flatMap((index) => [
+      [...Array(size).keys()].map((column) => index * size + column),
+      [...Array(size).keys()].map((row) => row * size + index),
+    ]),
+    [...Array(size).keys()].map((index) => index * size + index),
+    [...Array(size).keys()].map((index) => index * size + size - 1 - index),
+  ];
 export const hasBingo = (
   picked: number[],
   condition: WinCondition = "line",
