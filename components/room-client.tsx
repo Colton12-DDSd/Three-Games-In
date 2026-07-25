@@ -303,6 +303,7 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
             {data.card ? (
               <BingoCard
                 cardSet={data.room.card_set}
+                boardSize={data.room.board_size}
                 order={data.card.card_order}
                 selected={data.card.selected_squares}
                 disabled={
@@ -435,6 +436,7 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
           player={inspecting}
           card={data.cards.find((card) => card.player_id === inspecting.id)}
           cardSet={data.room.card_set}
+          boardSize={data.room.board_size}
           close={() => setInspecting(null)}
         />
       )}

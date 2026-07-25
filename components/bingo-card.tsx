@@ -6,17 +6,20 @@ export function BingoCard({
   disabled,
   onMark,
   cardSet,
+  boardSize,
 }: {
   order: number[];
   selected: number[];
   disabled: boolean;
   onMark: (index: number) => void;
   cardSet: CardSetKey;
+  boardSize: 3 | 4 | 5;
 }) {
   const prompts = CARD_SETS[cardSet].prompts;
   return (
     <div
-      className="grid grid-cols-4 gap-2 sm:gap-3"
+      className="grid gap-2 sm:gap-3"
+      style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
       aria-label="Your bingo card"
     >
       {order.map((promptIndex, index) => (

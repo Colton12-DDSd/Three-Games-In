@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/supabase/server";
 import { cleanName, makeCode, randomUUID, shuffle } from "@/lib/rooms";
-import { isCardSet, isWinCondition } from "@/lib/prompts";
+import {
+  CARD_SETS,
+  isBoardSize,
+  isCardSet,
+  isWinCondition,
+} from "@/lib/prompts";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +18,7 @@ export async function POST(request: NextRequest) {
       playerSecret,
       cardSet,
       winCondition,
+      boardSize,
     } = await request.json();
     const displayName = cleanName(name);
     if (!displayName)
@@ -34,12 +40,20 @@ export async function POST(request: NextRequest) {
       }
       const id = playerId || randomUUID(),
         secret = playerSecret || randomUUID();
+      const selectedSet = isCardSet(cardSet) ? cardSet : "arenas",
+        selectedSize = isBoardSize(boardSize) ? boardSize : 4;
+      if (CARD_SETS[selectedSet].prompts.length < selectedSize ** 2)
+        return NextResponse.json(
+          { error: "That game needs more prompts for this board size." },
+          { status: 400 },
+        );
       const { data: room, error } = await db
         .from("rooms")
         .insert({
           room_code: code,
           host_player_id: null,
           card_set: isCardSet(cardSet) ? cardSet : "arenas",
+          board_size: selectedSize,
           win_condition: isWinCondition(winCondition) ? winCondition : "line",
         })
         .select()
@@ -120,7 +134,10 @@ export async function POST(request: NextRequest) {
       await db.from("player_cards").insert({
         player_id: id,
         round_number: room.round_number,
-        card_order: shuffle(),
+        card_order: shuffle(
+          CARD_SETS[room.card_set as keyof typeof CARD_SETS].prompts.length,
+          room.board_size ** 2,
+        ),
         selected_squares: [],
       });
     await db

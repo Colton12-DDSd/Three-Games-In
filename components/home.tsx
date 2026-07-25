@@ -18,6 +18,7 @@ export function Home() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [cardSet, setCardSet] = useState<CardSetKey>("arenas");
+  const [boardSize, setBoardSize] = useState<3 | 4 | 5>(4);
   const [winCondition, setWinCondition] = useState<WinCondition>("line");
   const [busy, setBusy] = useState<"create" | "join" | null>(null);
   const [error, setError] = useState("");
@@ -45,6 +46,7 @@ export function Home() {
           name,
           roomCode: code,
           cardSet,
+          boardSize,
           winCondition,
           playerId: old?.playerId,
           playerSecret: old?.playerSecret,
@@ -120,6 +122,20 @@ export function Home() {
                 ))}
               </div>
             </fieldset>
+            <label className="block text-sm font-bold">
+              Board size
+              <select
+                value={boardSize}
+                onChange={(event) =>
+                  setBoardSize(Number(event.target.value) as 3 | 4 | 5)
+                }
+                className="mt-2 w-full rounded-xl border border-white/10 bg-ink px-4 py-3"
+              >
+                <option value={3}>3 × 3</option>
+                <option value={4}>4 × 4</option>
+                <option value={5}>5 × 5</option>
+              </select>
+            </label>
             <label className="block text-sm font-bold">
               Win condition
               <select

@@ -3,6 +3,7 @@ export type Room = {
   id: string;
   room_code: string;
   card_set: "arenas" | "r6" | "pummel";
+  board_size: 3 | 4 | 5;
   win_condition: "line" | "corners" | "x" | "corners_center" | "blackout";
   host_player_id: string;
   round_number: number;

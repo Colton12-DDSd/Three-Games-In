@@ -8,7 +8,12 @@ import {
   shuffle,
   transferHost,
 } from "@/lib/rooms";
-import { completedPatterns, isCardSet, isWinCondition } from "@/lib/prompts";
+import {
+  CARD_SETS,
+  completedPatterns,
+  isCardSet,
+  isWinCondition,
+} from "@/lib/prompts";
 
 export async function POST(
   request: NextRequest,
@@ -110,7 +115,11 @@ export async function POST(
       const next = wasSelected
         ? selected.filter((x) => x !== index)
         : [...selected, index];
-      const patterns = completedPatterns(next, room.win_condition);
+      const patterns = completedPatterns(
+        next,
+        room.win_condition,
+        room.board_size,
+      );
       const previousPatterns = Array.isArray(card.bingo_patterns)
         ? (card.bingo_patterns as string[])
         : [];
@@ -134,7 +143,7 @@ export async function POST(
         .update({
           progress_count: next.length,
           has_bingo: bingo,
-          is_one_away: oneAway(next, room.win_condition),
+          is_one_away: oneAway(next, room.win_condition, room.board_size),
           total_marks: me.total_marks + (wasSelected ? 0 : 1),
           last_seen_at: now,
         })
@@ -195,7 +204,9 @@ export async function POST(
       );
     if (action === "start" || action === "new_round") {
       const nextRound = room.round_number + 1,
-        cardSet = isCardSet(body.cardSet) ? body.cardSet : room.card_set,
+        cardSet = (
+          isCardSet(body.cardSet) ? body.cardSet : room.card_set
+        ) as keyof typeof CARD_SETS,
         winCondition = isWinCondition(body.winCondition)
           ? body.winCondition
           : room.win_condition;
@@ -207,7 +218,10 @@ export async function POST(
         await db.from("player_cards").insert({
           player_id: p.id,
           round_number: nextRound,
-          card_order: shuffle(),
+          card_order: shuffle(
+            CARD_SETS[cardSet].prompts.length,
+            room.board_size ** 2,
+          ),
           selected_squares: [],
         });
       await db

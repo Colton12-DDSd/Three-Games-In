@@ -7,11 +7,13 @@ export function CardInspector({
   player,
   card,
   cardSet,
+  boardSize,
   close,
 }: {
   player: Player;
   card?: SharedCard;
   cardSet: CardSetKey;
+  boardSize: 3 | 4 | 5;
   close: () => void;
 }) {
   return (
@@ -41,6 +43,7 @@ export function CardInspector({
         {card ? (
           <BingoCard
             cardSet={cardSet}
+            boardSize={boardSize}
             order={card.card_order}
             selected={card.selected_squares}
             disabled
