@@ -28,6 +28,23 @@ export async function POST(request: NextRequest) {
       );
     const db = admin();
     if (intent === "create") {
+      if (playerId && playerSecret) {
+        const { data: previous } = await db
+          .from("players")
+          .select("room_id")
+          .eq("id", playerId)
+          .eq("access_secret", playerSecret)
+          .maybeSingle();
+        if (previous) {
+          await db.from("players").delete().eq("id", playerId);
+          const { count } = await db
+            .from("players")
+            .select("id", { count: "exact", head: true })
+            .eq("room_id", previous.room_id);
+          if (!count)
+            await db.from("rooms").delete().eq("id", previous.room_id);
+        }
+      }
       let code = makeCode();
       for (let i = 0; i < 5; i++) {
         const { data } = await db
@@ -38,8 +55,10 @@ export async function POST(request: NextRequest) {
         if (!data) break;
         code = makeCode();
       }
-      const id = playerId || randomUUID(),
-        secret = playerSecret || randomUUID();
+      // A browser identity belongs to one room at a time. New rooms receive a
+      // fresh player identity so an existing player row cannot collide.
+      const id = randomUUID(),
+        secret = randomUUID();
       const selectedSet = isCardSet(cardSet) ? cardSet : "arenas",
         selectedSize = isBoardSize(boardSize) ? boardSize : 4;
       if (CARD_SETS[selectedSet].prompts.length < selectedSize ** 2)

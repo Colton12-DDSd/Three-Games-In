@@ -99,6 +99,27 @@ export function RoomClient({ roomCode }: { roomCode: string }) {
     }; // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reload, roomCode]);
   useEffect(() => {
+    const leaveOnExit = () => {
+      const identity = saved.current;
+      if (!identity) return;
+      navigator.sendBeacon(
+        `/api/rooms/${roomCode}/actions`,
+        new Blob(
+          [
+            JSON.stringify({
+              action: "leave",
+              playerId: identity.playerId,
+              playerSecret: identity.playerSecret,
+            }),
+          ],
+          { type: "application/json" },
+        ),
+      );
+    };
+    window.addEventListener("pagehide", leaveOnExit);
+    return () => window.removeEventListener("pagehide", leaveOnExit);
+  }, [roomCode]);
+  useEffect(() => {
     if (
       data?.room.bingo_event_id &&
       data.room.bingo_event_id !== heardEvent.current
