@@ -100,7 +100,7 @@ export async function POST(
           { status: 400 },
         );
       const index = Number(body.index);
-      if (!Number.isInteger(index) || index < 0 || index > 15)
+      if (!Number.isInteger(index) || index < 0 || index >= room.board_size ** 2)
         return NextResponse.json({ error: "Invalid square." }, { status: 400 });
       const { data: card } = await db
         .from("player_cards")
