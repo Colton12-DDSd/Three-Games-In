@@ -69,6 +69,10 @@ export const CARD_SETS = {
       "You lose a 1v1",
       "Someone says, “He’s one shot”",
       "You down but don’t kill someone",
+      "You plant the bomb yourself",
+      "Someone on your team plants the bomb",
+      "You defuse the bomb yourself",
+      "Your team defuses the bomb",
     ],
   },
   pummel: {
