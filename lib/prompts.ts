@@ -65,6 +65,10 @@ export const CARD_SETS = {
       "Your team wins without planting",
       "Your team has someone finish with zero kills",
       "Your team has someone attempt a runout",
+      "You survive with less than 10 health",
+      "You lose a 1v1",
+      "Someone says, “He’s one shot”",
+      "You down but don’t kill someone",
     ],
   },
   pummel: {
@@ -136,15 +140,14 @@ export const WIN_CONDITIONS = {
 export type WinCondition = keyof typeof WIN_CONDITIONS;
 export const isWinCondition = (value: unknown): value is WinCondition =>
   typeof value === "string" && value in WIN_CONDITIONS;
-export const winningLines = (size: number) =>
-  [
-    ...[...Array(size).keys()].flatMap((index) => [
-      [...Array(size).keys()].map((column) => index * size + column),
-      [...Array(size).keys()].map((row) => row * size + index),
-    ]),
-    [...Array(size).keys()].map((index) => index * size + index),
-    [...Array(size).keys()].map((index) => index * size + size - 1 - index),
-  ];
+export const winningLines = (size: number) => [
+  ...[...Array(size).keys()].flatMap((index) => [
+    [...Array(size).keys()].map((column) => index * size + column),
+    [...Array(size).keys()].map((row) => row * size + index),
+  ]),
+  [...Array(size).keys()].map((index) => index * size + index),
+  [...Array(size).keys()].map((index) => index * size + size - 1 - index),
+];
 export const hasBingo = (
   picked: number[],
   condition: WinCondition = "line",
