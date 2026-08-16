@@ -11,7 +11,7 @@ export const CARD_SETS = {
       "Win a 1v1",
       "Pick an augment",
       "Get eliminated by an enemy",
-      "Get hit by an anvil",
+      "Pick anvils",
       "Reroll an augment",
       "Die once",
       "Have the most deaths",
